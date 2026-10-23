@@ -8,10 +8,10 @@
   <title>Employment-Based Priority Date Calculator</title>
   <!-- Change an asset's version when its contents change so hosted pages load the matching files. -->
   <link rel="stylesheet" href="styles.css?v=a51e4a4f5708">
-  <script defer src="i18n.js?v=ce90cfa38930"></script>
+  <script defer src="i18n.js?v=0042863aa708"></script>
   <script defer src="data/bulletins.js"></script>
-  <script defer src="model.js"></script>
-  <script defer src="app.js?v=baf3cee6f8d6"></script>
+  <script defer src="model.js?v=2c0353ff700c"></script>
+  <script defer src="app.js?v=94ad6d6a877d"></script>
 </head>
 <body>
   <main>
@@ -42,11 +42,11 @@
               <div><label for="window-start" data-i18n="startBulletin">Start bulletin</label><select id="window-start" name="window-start" required></select></div>
               <div><label for="window-end" data-i18n="endBulletin">End bulletin</label><select id="window-end" name="window-end" required></select></div>
             </div>
-            <p id="window-label" class="window-summary" aria-live="polite">Latest six monthly intervals</p>
+            <p id="window-label" class="window-summary" aria-live="polite">Latest twelve monthly intervals</p>
             <p class="field-hint" id="window-hint" data-i18n="windowHint">Both endpoints count. Choose at least one monthly interval.</p>
             <div class="window-presets" role="group" aria-label="Recent history shortcuts" data-i18n-aria-label="historyShortcuts">
-              <button type="button" class="reset-window" id="reset-window" aria-pressed="false" data-i18n="latestSix">Use latest 6 months</button>
               <button type="button" class="reset-window" id="latest-12-months" aria-pressed="false" data-i18n="latestTwelve">Use latest 12 months</button>
+              <button type="button" class="reset-window" id="latest-24-months" aria-pressed="false" data-i18n="latestTwentyFour">Use latest 24 months</button>
             </div>
           </fieldset>
           <p class="form-error" id="form-error" role="alert" hidden></p>

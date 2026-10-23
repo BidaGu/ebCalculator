@@ -16,7 +16,13 @@ function fixture(cutoffs, chartB = cutoffs) {
 }
 
 function run(rows, priorityDate = '2024-08-01', region = 'CHINA') {
-  return estimate({ rows, region, priorityDate });
+  return estimate({ rows, region, priorityDate, ...sixMonthWindow(rows) });
+}
+
+// Keep the six-month regression fixtures explicit as the application default evolves.
+function sixMonthWindow(rows) {
+  const windowEnd = rows.map(row => row.bulletin).sort().at(-1);
+  return windowEnd ? { windowStart: shiftMonths(windowEnd, -6), windowEnd } : {};
 }
 
 const advancing = ['2024-01-01', '2024-02-01', '2024-03-01', '2024-04-01', '2024-05-01', '2024-06-01', '2024-07-01'];
@@ -32,6 +38,43 @@ test('uses seven observations for six intervals and forecasts from the latest bu
   assert.equal(result.charts.a.monthsToTarget, 31 / (182 / 6));
   assert.equal(result.charts.a.bulletinSteps, 2);
   assert.equal(result.charts.a.estimatedBulletin, '2027-01-01');
+});
+
+test('omitted window bounds average the latest twelve intervals using thirteen observations', () => {
+  const rows = steadyRows(25);
+  rows[5].EB1.CHINA = { a: 'currentPD', b: 'unauthorized' }; // Outside the latest twelve months.
+  rows[12].EB1.CHINA = { a: '2024-01-01', b: '2024-01-01' };
+  const priorityDate = fromDay(toDay(rows.at(-1).EB1.CHINA.a) + 70);
+  const result = estimate({ rows, region: 'CHINA', priorityDate });
+  assert.equal(result.windowStart, '2027-05-01');
+  assert.equal(result.windowEnd, '2028-05-01');
+  assert.equal(result.latestBulletin, '2028-05-01');
+  assert.equal(result.windowMonths, 12);
+  assert.equal(result.history.length, 13);
+  assert.equal(result.history[0].bulletin, '2027-05-01');
+  assert.equal(result.history.at(-1).bulletin, '2028-05-01');
+  assert.equal(result.charts.a.speedDaysPerMonth, 20); // 240 cutoff days / twelve intervals.
+  assert.equal(result.charts.a.gapDays, 70);
+  assert.equal(result.charts.a.monthsToTarget, 3.5);
+  assert.equal(result.charts.a.bulletinSteps, 4);
+  assert.equal(result.charts.a.estimatedBulletin, '2028-09-01');
+  assert.equal(result.charts.b.unadjustedEstimatedBulletin, '2028-09-01');
+  assert.equal(result.charts.b.estimatedBulletin, '2028-10-01');
+  assert.equal(result.charts.b.bulletinSteps, 5);
+});
+
+test('the twelve-month default stays insufficient with only six months of data while custom six months still projects', () => {
+  const rows = fixture(advancing);
+  const result = estimate({ rows, region: 'CHINA', priorityDate: '2024-08-01' });
+  assert.equal(result.windowStart, '2025-11-01');
+  assert.equal(result.windowMonths, 12);
+  assert.equal(result.history.length, 7);
+  assert.equal(result.charts.a.status, 'insufficient');
+  assert.equal(result.charts.a.speedDaysPerMonth, null);
+  const sixMonths = run(rows);
+  assert.equal(sixMonths.windowMonths, 6);
+  assert.equal(sixMonths.history.length, 7);
+  assert.equal(sixMonths.charts.a.status, 'projected');
 });
 
 test('flat segments and intermediate retrogressions contribute to the signed endpoint rate', () => {
@@ -54,7 +97,7 @@ test('all-flat and net-negative windows have no estimated bulletin', () => {
 test('equality and previously passed target dates are already reached even without full history', () => {
   const rows = fixture(advancing).slice(-1);
   for (const target of ['2024-07-01', '2024-06-30']) {
-    const chart = run(rows, target).charts.a;
+    const chart = estimate({ rows, region: 'CHINA', priorityDate: target }).charts.a;
     assert.equal(chart.status, 'reached');
     assert.equal(chart.gapDays, 0);
     assert.equal(chart.monthsToTarget, 0);
@@ -92,7 +135,7 @@ test('a missing month is insufficient even with an extra older observation', () 
   rows.unshift({ ...rows[0], bulletin: '2026-04-01' });
   assert.equal(run(rows).charts.a.status, 'insufficient');
   assert.equal(run(rows).windowStart, '2026-05-01');
-  assert.equal(run(fixture(advancing).slice(1)).charts.a.status, 'insufficient');
+  assert.equal(estimate({ rows: fixture(advancing).slice(1), region: 'CHINA', priorityDate: '2024-08-01' }).charts.a.status, 'insufficient');
 });
 
 test('duplicate monthly observations do not satisfy complete monthly coverage', () => {
@@ -169,7 +212,7 @@ test('UTC dates survive leap days, early years, and daylight-saving changes', ()
 test('forecast results are identical across UTC and daylight-saving timezones', () => {
   const { execFileSync } = require('node:child_process');
   const modelPath = JSON.stringify(require.resolve('./model.js'));
-  const script = `const model = require(${modelPath}); process.stdout.write(JSON.stringify(model.estimate(${JSON.stringify({ rows: fixture(advancing), region: 'CHINA', priorityDate: '2024-08-01' })})));`;
+  const script = `const model = require(${modelPath}); process.stdout.write(JSON.stringify(model.estimate(${JSON.stringify({ rows: steadyRows(13), region: 'CHINA', priorityDate: '2025-01-01' })})));`;
   const outputs = ['UTC', 'America/Los_Angeles', 'Asia/Kolkata'].map(TZ =>
     execFileSync(process.execPath, ['-e', script], { encoding: 'utf8', env: { ...process.env, TZ } })
   );
@@ -226,12 +269,13 @@ test('one-, twelve-, and twenty-four-month windows include both endpoints and us
   }
 });
 
-test('only an end date defaults the start to six months earlier; only a start defaults the end to latest', () => {
+test('only an end date defaults the start to twelve months earlier; only a start defaults the end to latest', () => {
   const rows = steadyRows(25);
   const onlyEnd = custom(rows, undefined, '2027-05-01');
-  assert.equal(onlyEnd.windowStart, '2026-11-01');
+  assert.equal(onlyEnd.windowStart, '2026-05-01');
   assert.equal(onlyEnd.windowEnd, '2027-05-01');
-  assert.equal(onlyEnd.windowMonths, 6);
+  assert.equal(onlyEnd.windowMonths, 12);
+  assert.equal(onlyEnd.history.length, 13);
   const onlyStart = custom(rows, '2026-06-01');
   assert.equal(onlyStart.windowEnd, '2028-05-01');
   assert.equal(onlyStart.windowMonths, 23);
@@ -249,7 +293,7 @@ test('custom bounds reject invalid dates, non-first days, equal/reversed bounds,
     ['2027-06-01', '2027-05-01'],
     ['2026-04-01', '2027-05-01'],
     ['2026-05-01', '2028-06-01'],
-    [undefined, '2026-06-01'] // Its default six-month start precedes the data.
+    [undefined, '2026-06-01'] // Its default twelve-month start precedes the data.
   ];
   for (const [start, end] of invalidBounds) {
     assert.throws(() => custom(rows, start, end), RangeError);
@@ -337,7 +381,7 @@ function forecastAtSteps(steps, latestBulletin = '2026-11-01') {
   const rows = steadyRows(7);
   rows.forEach((row, index) => { row.bulletin = shiftMonths(latestBulletin, index - 6); });
   const priorityDate = fromDay(toDay(rows.at(-1).EB1.CHINA.b) + steps * 10);
-  return estimate({ rows, region: 'CHINA', priorityDate });
+  return estimate({ rows, region: 'CHINA', priorityDate, ...sixMonthWindow(rows) });
 }
 
 test('Chart B May through September projections roll to October; every other month is unchanged', () => {
@@ -384,7 +428,7 @@ test('Chart B reopening remains October of the raw forecast year across distant 
 test('seasonal adjustment preserves the fractional linear estimate and updates the final whole-month wait', () => {
   const rows = steadyRows(7);
   const priorityDate = fromDay(toDay(rows.at(-1).EB1.CHINA.b) + 55);
-  const result = estimate({ rows, region: 'CHINA', priorityDate });
+  const result = estimate({ rows, region: 'CHINA', priorityDate, ...sixMonthWindow(rows) });
   const a = result.charts.a;
   const b = result.charts.b;
   assert.equal(a.estimatedBulletin, '2027-05-01');
@@ -486,7 +530,7 @@ test('each category, region, and chart uses its own distinct cutoff trend', () =
   });
   for (const [categoryIndex, category] of categories.entries()) {
     for (const [regionIndex, region] of regions.entries()) {
-      const result = estimate({ rows, category, region, priorityDate: '2030-01-01' });
+      const result = estimate({ rows, category, region, priorityDate: '2030-01-01', ...sixMonthWindow(rows) });
       assert.equal(result.category, category);
       assert.equal(result.region, region);
       for (const [chartIndex, chart] of ['a', 'b'].entries()) {
@@ -501,7 +545,7 @@ test('each category, region, and chart uses its own distinct cutoff trend', () =
 });
 
 test('omitting category defaults to EB1 and invalid categories are rejected', () => {
-  const rows = steadyRows(7);
+  const rows = steadyRows(13);
   rows.at(-1).EB2.CHINA.a = 'currentPD';
   const options = { rows, region: 'CHINA', priorityDate: '2025-01-01' };
   assert.deepEqual(estimate(options), estimate({ ...options, category: 'EB1' }));
@@ -517,7 +561,7 @@ test('missing selected-category history or latest values never borrow another ca
     row.EB1.CHINA = { a: 'currentPD', b: 'currentPD' };
     delete row.EB2;
   }
-  const absent = estimate({ rows, category: 'EB2', region: 'CHINA', priorityDate: '2025-01-01' });
+  const absent = estimate({ rows, category: 'EB2', region: 'CHINA', priorityDate: '2025-01-01', ...sixMonthWindow(rows) });
   assert.equal(absent.charts.a.status, 'insufficient');
   assert.equal(absent.charts.a.latestCutoff, null);
   assert.equal(absent.charts.a.speedDaysPerMonth, null);
@@ -525,14 +569,14 @@ test('missing selected-category history or latest values never borrow another ca
 
   const partial = steadyRows(7);
   delete partial[3].EB2;
-  const missingHistory = estimate({ rows: partial, category: 'EB2', region: 'CHINA', priorityDate: '2025-01-01' });
+  const missingHistory = estimate({ rows: partial, category: 'EB2', region: 'CHINA', priorityDate: '2025-01-01', ...sixMonthWindow(partial) });
   assert.equal(missingHistory.charts.a.status, 'insufficient');
   assert.equal(missingHistory.charts.a.latestCutoff, partial.at(-1).EB2.CHINA.a);
   assert.equal(missingHistory.charts.a.speedDaysPerMonth, null);
   assert.equal(run(partial, '2025-01-01').charts.a.status, 'projected');
 
   delete partial.at(-1).EB3.CHINA;
-  const missingRegion = estimate({ rows: partial, category: 'EB3', region: 'CHINA', priorityDate: '2025-01-01' });
+  const missingRegion = estimate({ rows: partial, category: 'EB3', region: 'CHINA', priorityDate: '2025-01-01', ...sixMonthWindow(partial) });
   assert.equal(missingRegion.charts.a.status, 'insufficient');
   assert.equal(missingRegion.charts.a.latestCutoff, null);
 });
@@ -555,7 +599,7 @@ test('historical-window markers are checked only within the selected category an
 test('current, unavailable, stalled, and retrogressing states belong to the selected category', () => {
   for (const category of ['EB1', 'EB2', 'EB3']) {
     const rows = steadyRows(7);
-    const options = { rows, category, region: 'CHINA', priorityDate: '2025-01-01' };
+    const options = { rows, category, region: 'CHINA', priorityDate: '2025-01-01', ...sixMonthWindow(rows) };
     rows.at(-1)[category].CHINA = { a: 'currentPD', b: 'unauthorized' };
     const latestStates = estimate(options);
     assert.equal(latestStates.charts.a.status, 'current');
@@ -584,7 +628,7 @@ test('the Chart B seasonal rule applies to EB1, EB2, and EB3 after their own pro
       row[category].CHINA = { a: cutoff, b: cutoff };
     });
     const priorityDate = fromDay(toDay(rows.at(-1)[category].CHINA.b) + step * 6);
-    const result = estimate({ rows, category, region: 'CHINA', priorityDate });
+    const result = estimate({ rows, category, region: 'CHINA', priorityDate, ...sixMonthWindow(rows) });
     assert.equal(result.category, category);
     assert.equal(result.charts.b.speedDaysPerMonth, step);
     assert.equal(result.charts.b.gapDays, step * 6);

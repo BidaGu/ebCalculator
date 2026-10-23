@@ -2,7 +2,7 @@
   'use strict';
 
   const DAY_MS = 86400000;
-  const DEFAULT_WINDOW_MONTHS = 6;
+  const DEFAULT_WINDOW_MONTHS = 12;
   const CATEGORIES = ['EB1', 'EB2', 'EB3'];
   const REGIONS = ['ROW', 'CHINA', 'INDIA'];
 
