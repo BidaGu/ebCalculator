@@ -275,7 +275,7 @@
   }
   const bulletinDates = [...new Set(data.rows.map((row) => row.bulletin))].sort();
   const lastBulletin = bulletinDates[bulletinDates.length - 1];
-  const windowPresets = [{months: 6, id: 'reset-window'}, {months: 12, id: 'latest-12-months'}];
+  const windowPresets = [{months: 12, id: 'latest-12-months'}, {months: 24, id: 'latest-24-months'}];
   function populateBulletinOptions() {
     const start = $('window-start').value, end = $('window-end').value;
     const options = bulletinDates.slice().reverse().map((bulletin) => `<option value="${escape(bulletin)}">${escape(axisFormatter.format(dateObject(bulletin)))}</option>`).join('');
@@ -309,5 +309,5 @@
     populateBulletinOptions();
     calculate();
   });
-  applyWindowPreset(6);
+  applyWindowPreset(12);
 }());
