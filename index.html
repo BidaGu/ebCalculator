@@ -7,6 +7,7 @@
   <meta name="description" content="Estimate when EB1, EB2, and EB3 Chart A and Chart B reach your priority date using a custom window of saved Visa Bulletin history.">
   <title>Employment-Based Priority Date Calculator</title>
   <link rel="stylesheet" href="styles.css">
+  <script defer src="i18n.js"></script>
   <script defer src="data/bulletins.js"></script>
   <script defer src="model.js"></script>
   <script defer src="app.js"></script>
@@ -14,61 +15,64 @@
 <body>
   <main>
     <section class="intro" aria-labelledby="page-title">
-      <div><h1 id="page-title">When could your date be reached?</h1></div>
-      <div class="data-badge"><span class="live-dot" aria-hidden="true"></span><div>Latest saved bulletin<strong id="latest-bulletin">Loading data…</strong></div></div>
+      <div><h1 id="page-title" data-i18n="pageTitle">When could your date be reached?</h1></div>
+      <div class="intro-tools">
+        <div class="data-badge"><span class="live-dot" aria-hidden="true"></span><div><span data-i18n="latestBulletin">Latest saved bulletin</span><strong id="latest-bulletin">Loading data…</strong></div></div>
+        <div class="language-control"><label for="language-select">Language / 语言</label><select id="language-select" name="language"><option value="en" lang="en">English</option><option value="zh-CN" lang="zh-CN">简体中文</option></select></div>
+      </div>
     </section>
 
     <div class="workspace">
       <aside class="input-panel panel">
-        <div class="section-number">01 <span>YOUR DETAILS</span></div>
-        <h2>Set your target</h2>
+        <div class="section-number">01 <span data-i18n="yourDetails">YOUR DETAILS</span></div>
+        <h2 data-i18n="setTarget">Set your target</h2>
         <form id="calculator-form">
-          <label for="category">Employment category</label>
+          <label for="category" data-i18n="category">Employment category</label>
           <select id="category" name="category"><option value="EB1">EB1</option><option value="EB2">EB2</option><option value="EB3">EB3</option></select>
-          <label for="region">Chargeability region</label>
-          <select id="region" name="region"><option value="CHINA">China — mainland</option><option value="INDIA">India</option><option value="ROW">Rest of world</option></select>
-          <label for="priority-date">Priority date</label>
+          <label for="region" data-i18n="region">Chargeability region</label>
+          <select id="region" name="region"><option value="CHINA" data-i18n="china">China — mainland</option><option value="INDIA" data-i18n="india">India</option><option value="ROW" data-i18n="restOfWorld">Rest of world</option></select>
+          <label for="priority-date" data-i18n="priorityDate">Priority date</label>
           <input id="priority-date" name="priority-date" type="date" value="2025-01-01" min="0001-01-01" max="9999-12-31" required aria-describedby="priority-hint form-error">
-          <p class="field-hint" id="priority-hint">A sample date is filled in. Replace it with yours.</p>
+          <p class="field-hint" id="priority-hint" data-i18n="priorityHint">A sample date is filled in. Replace it with yours.</p>
           <fieldset class="window-controls" aria-describedby="window-help window-hint">
-            <legend>Averaging window</legend>
-            <p class="window-help" id="window-help">Choose the historical period used to calculate each chart’s average progression speed. That speed is then used to estimate when the cutoff date could reach your priority date.</p>
+            <legend data-i18n="averagingWindow">Averaging window</legend>
+            <p class="window-help" id="window-help" data-i18n="windowHelp">Choose the historical period used to calculate each chart’s average progression speed. That speed is then used to estimate when the cutoff date could reach your priority date.</p>
             <div class="window-selectors">
-              <div><label for="window-start">Start bulletin</label><select id="window-start" name="window-start" required></select></div>
-              <div><label for="window-end">End bulletin</label><select id="window-end" name="window-end" required></select></div>
+              <div><label for="window-start" data-i18n="startBulletin">Start bulletin</label><select id="window-start" name="window-start" required></select></div>
+              <div><label for="window-end" data-i18n="endBulletin">End bulletin</label><select id="window-end" name="window-end" required></select></div>
             </div>
             <p id="window-label" class="window-summary" aria-live="polite">Latest six monthly intervals</p>
-            <p class="field-hint" id="window-hint">Both endpoints count. Choose at least one monthly interval.</p>
-            <div class="window-presets" role="group" aria-label="Recent history shortcuts">
-              <button type="button" class="reset-window" id="reset-window" aria-pressed="false">Use latest 6 months</button>
-              <button type="button" class="reset-window" id="latest-12-months" aria-pressed="false">Use latest 12 months</button>
+            <p class="field-hint" id="window-hint" data-i18n="windowHint">Both endpoints count. Choose at least one monthly interval.</p>
+            <div class="window-presets" role="group" aria-label="Recent history shortcuts" data-i18n-aria-label="historyShortcuts">
+              <button type="button" class="reset-window" id="reset-window" aria-pressed="false" data-i18n="latestSix">Use latest 6 months</button>
+              <button type="button" class="reset-window" id="latest-12-months" aria-pressed="false" data-i18n="latestTwelve">Use latest 12 months</button>
             </div>
           </fieldset>
           <p class="form-error" id="form-error" role="alert" hidden></p>
         </form>
-        <div class="input-footnote"><span class="footnote-rule"></span><p>Both charts use the same history window.</p></div>
+        <div class="input-footnote"><span class="footnote-rule"></span><p data-i18n="sharedWindow">Both charts use the same history window.</p></div>
       </aside>
 
-      <section class="results" aria-label="Estimate results">
-        <div class="results-top"><div class="section-number">02 <span>YOUR ESTIMATES</span></div><p id="target-summary">EB1 · China mainland</p></div>
+      <section class="results" aria-label="Estimate results" data-i18n-aria-label="estimateResults">
+        <div class="results-top"><div class="section-number">02 <span data-i18n="yourEstimates">YOUR ESTIMATES</span></div><p id="target-summary">EB1 · China mainland</p></div>
         <div id="result-cards" class="result-cards" aria-live="polite" aria-atomic="true"></div>
         <p class="estimate-note" id="estimate-note">Waits are measured from the latest saved bulletin, not from today.</p>
-        <p class="closure-note"><strong>Chart B closure assumption</strong> Chart B is assumed closed from May through September. A projected date in these months moves to October of the same year, the start of the next fiscal year. This adjustment applies to future Chart B estimates only.</p>
+        <p class="closure-note"><strong data-i18n="closureTitle">Chart B closure assumption</strong><span data-i18n="closureNote">Chart B is assumed closed from May through September. A projected date in these months moves to October of the same year, the start of the next fiscal year. This adjustment applies to future Chart B estimates only.</span></p>
 
         <section class="history-panel panel" aria-labelledby="history-heading">
-          <div class="history-heading"><div><p class="eyebrow">THE HISTORY BEHIND THE ESTIMATE</p><h2 id="history-heading">Selected progression history</h2></div><div class="legend"><span><i class="legend-line b"></i>Chart B</span><span><i class="legend-line a"></i>Chart A</span></div></div>
+          <div class="history-heading"><div><p class="eyebrow" data-i18n="historyEyebrow">THE HISTORY BEHIND THE ESTIMATE</p><h2 id="history-heading">Selected progression history</h2></div><div class="legend"><span><i class="legend-line b"></i><span data-i18n="chartB">Chart B</span></span><span><i class="legend-line a"></i><span data-i18n="chartA">Chart A</span></span></div></div>
           <div id="history-chart" class="history-chart"></div>
-          <div class="chart-caption"><span id="chart-caption">The selected window determines the average speed</span><span>Cutoff dates on vertical axis</span></div>
-          <details class="history-details"><summary>View the underlying dates <span aria-hidden="true">+</span></summary><div class="table-wrap"><table><caption class="sr-only" id="history-table-caption">Bulletin cutoff dates used in the selected averaging window</caption><thead><tr><th scope="col">Bulletin month</th><th scope="col">Chart B</th><th scope="col">Chart A</th></tr></thead><tbody id="history-table"></tbody></table></div></details>
+          <div class="chart-caption"><span id="chart-caption">The selected window determines the average speed</span><span data-i18n="verticalAxis">Cutoff dates on vertical axis</span></div>
+          <details class="history-details"><summary><span class="details-label" data-i18n="viewDates">View the underlying dates</span><span aria-hidden="true">+</span></summary><div class="table-wrap"><table><caption class="sr-only" id="history-table-caption">Bulletin cutoff dates used in the selected averaging window</caption><thead><tr><th scope="col" data-i18n="bulletinMonth">Bulletin month</th><th scope="col" data-i18n="chartB">Chart B</th><th scope="col" data-i18n="chartA">Chart A</th></tr></thead><tbody id="history-table"></tbody></table></div></details>
         </section>
       </section>
     </div>
 
     <section class="method-panel" aria-labelledby="method-heading">
-      <div><p class="eyebrow">A SIMPLE, VISIBLE ASSUMPTION</p><h2 id="method-heading">Your selected pace continues.</h2><p>The selected history sets the speed. The latest saved cutoff is always the starting point for your estimate.</p></div>
-      <div class="method-equation"><div><span>Average speed</span><strong>(Window end cutoff − window start cutoff) ÷ months</strong><small>Signed calendar-day movement across the selected window</small></div><div><span>Estimated wait</span><strong>(Your date − latest cutoff) ÷ average speed</strong><small>Projected from the latest saved bulletin, rounded up</small></div></div>
+      <div><p class="eyebrow" data-i18n="methodEyebrow">A SIMPLE, VISIBLE ASSUMPTION</p><h2 id="method-heading" data-i18n="methodHeading">Your selected pace continues.</h2><p data-i18n="methodDescription">The selected history sets the speed. The latest saved cutoff is always the starting point for your estimate.</p></div>
+      <div class="method-equation"><div><span data-i18n="averageSpeed">Average speed</span><strong data-i18n="speedFormula">(Window end cutoff − window start cutoff) ÷ months</strong><small data-i18n="speedDescription">Signed calendar-day movement across the selected window</small></div><div><span data-i18n="estimatedWait">Estimated wait</span><strong data-i18n="waitFormula">(Your date − latest cutoff) ÷ average speed</strong><small data-i18n="waitDescription">Projected from the latest saved bulletin, rounded up</small></div></div>
     </section>
-    <footer><p>A historical extrapolation, not a prediction or a filing / approval determination.</p><p>EB1 · EB2 · EB3 <span>·</span> Runs locally <span>·</span> No data sent</p></footer>
+    <footer><p data-i18n="disclaimer">A historical extrapolation, not a prediction or a filing / approval determination.</p><p>EB1 · EB2 · EB3 <span>·</span> <span class="footer-copy" data-i18n="runsLocally">Runs locally</span> <span>·</span> <span class="footer-copy" data-i18n="noDataSent">No data sent</span></p></footer>
   </main>
   <noscript><p class="noscript">Enable JavaScript to use the calculator. No internet connection is required.</p></noscript>
 </body>
