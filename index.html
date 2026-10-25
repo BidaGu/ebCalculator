@@ -7,44 +7,57 @@
   <meta name="description" content="Estimate when EB1, EB2, and EB3 Chart A and Chart B reach your priority date using a custom window of saved Visa Bulletin history.">
   <title>Employment-Based Priority Date Calculator</title>
   <!-- Change an asset's version when its contents change so hosted pages load the matching files. -->
-  <link rel="stylesheet" href="styles.css?v=2a34bf5940f3">
-  <script defer src="i18n.js?v=bdcb68948619"></script>
+  <link rel="stylesheet" href="styles.css?v=6102dc611e21">
+  <script defer src="i18n.js?v=55674ed8fd9c"></script>
   <script defer src="data/bulletins.js"></script>
   <script defer src="model.js?v=1dbdad16fe65"></script>
-  <script defer src="history-chart.js?v=c89fdfeda530"></script>
-  <script defer src="fiscal-heatmap.js?v=4f91746943a5"></script>
-  <script defer src="rolling-speed-chart.js?v=0f0aec64c3bb"></script>
-  <script defer src="app.js?v=b4860b6b2e3c"></script>
+  <script defer src="history-chart.js?v=574988e01b01"></script>
+  <script defer src="fiscal-heatmap.js?v=ce9ee96cd6d1"></script>
+  <script defer src="rolling-speed-chart.js?v=f3d8269300c8"></script>
+  <script defer src="app.js?v=483ee73917fe"></script>
 </head>
 <body>
   <main>
     <section class="intro" aria-labelledby="page-title">
-      <div><h1 id="page-title" data-i18n="pageTitle">When could your date be reached?</h1></div>
+      <div class="intro-text">
+        <h1 id="page-title" data-i18n="pageTitle">When could your priority date be reached?</h1>
+        <p class="intro-copy" id="page-subtitle" data-i18n="pageSubtitle">A calculator that uses average progression speed from selected history.</p>
+      </div>
       <div class="intro-tools">
         <div class="data-badge"><span class="live-dot" aria-hidden="true"></span><div><span data-i18n="latestBulletin">Latest saved bulletin</span><strong id="latest-bulletin">Loading data…</strong></div></div>
-        <div class="language-control"><label for="language-select">Language / 语言</label><select id="language-select" name="language"><option value="en" lang="en">English</option><option value="zh-CN" lang="zh-CN">简体中文</option></select></div>
         <a class="project-github" href="https://github.com/BidaGu/ebCalculator" target="_blank" rel="noopener noreferrer">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.86c.68 0 1.36.09 2 .26 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
           <span data-i18n="viewOnGithub">View on GitHub</span>
         </a>
+        <div class="language-control"><label for="language-select">Language / 语言</label><select id="language-select" name="language"><option value="en" lang="en">English</option><option value="zh-CN" lang="zh-CN">简体中文</option></select></div>
       </div>
     </section>
 
     <div class="workspace">
       <aside class="input-panel panel">
         <div class="section-number">01 <span data-i18n="yourDetails">YOUR DETAILS</span></div>
-        <h2 data-i18n="setTarget">Set your target</h2>
+        <h2 id="target-inputs-heading" data-i18n="setTarget">Set your target</h2>
         <form id="calculator-form">
-          <label for="category" data-i18n="category">Employment category</label>
-          <select id="category" name="category"><option value="EB1">EB1</option><option value="EB2">EB2</option><option value="EB3">EB3</option></select>
-          <label for="region" data-i18n="region">Chargeability region</label>
-          <select id="region" name="region"><option value="CHINA" data-i18n="china">China — mainland</option><option value="INDIA" data-i18n="india">India</option><option value="ROW" data-i18n="restOfWorld">Rest of world</option></select>
-          <label for="priority-date" data-i18n="priorityDate">Priority date</label>
-          <input id="priority-date" name="priority-date" type="date" value="2025-01-01" min="0001-01-01" max="9999-12-31" required aria-describedby="priority-hint form-error">
-          <p class="field-hint" id="priority-hint" data-i18n="priorityHint">A sample date is filled in. Replace it with yours.</p>
-          <fieldset class="window-controls" aria-describedby="window-help window-hint">
-            <legend data-i18n="averagingWindow">Averaging window</legend>
-            <p class="window-help" id="window-help" data-i18n="windowHelp">Choose the historical period used to calculate each chart’s average progression speed. That speed is then used to estimate when the cutoff date could reach your priority date.</p>
+          <div class="primary-inputs" role="group" aria-labelledby="target-inputs-heading">
+            <div class="primary-field">
+              <label for="category" data-i18n="category">Employment category</label>
+              <select id="category" name="category"><option value="EB1">EB1</option><option value="EB2">EB2</option><option value="EB3">EB3</option></select>
+            </div>
+            <div class="primary-field">
+              <label for="region" data-i18n="region">Chargeability region</label>
+              <select id="region" name="region"><option value="CHINA" data-i18n="china">China — mainland</option><option value="INDIA" data-i18n="india">India</option><option value="ROW" data-i18n="restOfWorld">Rest of world</option></select>
+            </div>
+            <div class="primary-field">
+              <label for="priority-date" data-i18n="priorityDate">Priority date</label>
+              <input id="priority-date" name="priority-date" type="date" value="2025-01-01" min="0001-01-01" max="9999-12-31" required aria-describedby="priority-hint form-error">
+              <p class="field-hint" id="priority-hint" data-i18n="priorityHint">A sample date is filled in. Replace it with yours.</p>
+            </div>
+          </div>
+          <fieldset class="window-controls" aria-labelledby="averaging-window-title" aria-describedby="window-hint">
+            <legend><span id="averaging-window-title" data-i18n="averagingWindow">Averaging window</span><span class="chart-help">
+              <button type="button" id="window-help-trigger" class="chart-help-trigger" aria-label="About the averaging window" data-i18n-aria-label="windowHelpLabel" aria-describedby="window-help" aria-controls="window-help" aria-expanded="false">?</button>
+              <span class="chart-help-tooltip" id="window-help" role="tooltip" data-i18n="windowHelp" hidden>Choose the historical period used to calculate each chart’s average progression speed. That speed is then used to estimate when the cutoff date could reach your priority date. The default is the latest 24 months.</span>
+            </span></legend>
             <div class="window-selectors">
               <div><label for="window-start" data-i18n="startBulletin">Start bulletin</label><select id="window-start" name="window-start" required></select></div>
               <div><label for="window-end" data-i18n="endBulletin">End bulletin</label><select id="window-end" name="window-end" required></select></div>
@@ -65,7 +78,6 @@
         <div class="results-top"><div class="section-number">02 <span data-i18n="yourEstimates">YOUR ESTIMATES</span></div><p id="target-summary">EB1 · China mainland</p></div>
         <div id="result-cards" class="result-cards" aria-live="polite" aria-atomic="true"></div>
         <p class="estimate-note" id="estimate-note">Waits are measured from the latest saved bulletin, not from today.</p>
-        <p class="closure-note"><strong data-i18n="closureTitle">Chart B closure assumption</strong><span data-i18n="closureNote">Chart B is assumed closed from May through September. A projected date in these months moves to October of the same year, the start of the next fiscal year. This adjustment applies to future Chart B estimates only.</span></p>
 
         <section class="history-panel panel" aria-labelledby="history-heading">
           <div class="history-heading"><div><p class="eyebrow" data-i18n="historyEyebrow">THE HISTORY BEHIND THE ESTIMATE</p><h2 id="history-heading">Selected progression history</h2></div></div>
@@ -141,7 +153,7 @@
       </div>
       <div class="footer-meta">
         <p data-i18n="disclaimer">A historical extrapolation, not a prediction or a filing / approval determination.</p>
-        <p>EB1 · EB2 · EB3 <span>·</span> <span class="footer-copy" data-i18n="runsLocally">Runs locally</span> <span>·</span> <span class="footer-copy" data-i18n="noDataSent">No data sent</span></p>
+        <p>EB1 · EB2 · EB3 <span>·</span> <span class="footer-copy" data-i18n="runsLocally">Calculations run in your browser</span> <span>·</span> <span class="footer-copy" data-i18n="noDataSent">Your inputs stay on your device</span></p>
       </div>
     </footer>
   </main>

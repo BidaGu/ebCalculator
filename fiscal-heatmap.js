@@ -154,26 +154,26 @@
       }
     }, options.labels || {});
     const label = (key, ...args) => typeof labels[key] === 'function' ? labels[key](...args) : labels[key];
-    const width = 900, left = 94, cellWidth = 64, cellHeight = 34;
-    const paneHeight = 80 + fiscalYears.length * cellHeight;
-    const height = fiscalYears.length ? paneHeight * 2 + 16 : 112;
+    const width = 900, left = 108, cellWidth = 64, cellHeight = 40;
+    const paneHeight = 100 + fiscalYears.length * cellHeight;
+    const height = fiscalYears.length ? paneHeight * 2 + 20 : 112;
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" class="fiscal-heatmap-chart" role="img" aria-labelledby="fiscal-heatmap-title fiscal-heatmap-description" style="display:block;width:100%;height:auto;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff"><title id="fiscal-heatmap-title">${escape(label('title'))}</title><desc id="fiscal-heatmap-description">${escape(label('description'))}</desc><rect x="0" y="0" width="${width}" height="${height}" fill="#fff"/>`;
-    if (!fiscalYears.length) return svg + `<text x="450" y="58" text-anchor="middle" fill="#64748b" font-size="13">${escape(label('noData'))}</text></svg>`;
+    if (!fiscalYears.length) return svg + `<text x="450" y="58" text-anchor="middle" fill="#64748b" font-size="15">${escape(label('noData'))}</text></svg>`;
     for (const [pane, chart] of ['A', 'B'].entries()) {
       const base = pane * paneHeight;
-      svg += `<g class="fiscal-heatmap-pane" data-chart="${chart}"><text x="18" y="${base + 24}" fill="#334155" font-size="14" font-weight="600">${escape(label('chartTitle', chart))}</text>`;
+      svg += `<g class="fiscal-heatmap-pane" data-chart="${chart}"><text x="18" y="${base + 28}" fill="#334155" font-size="18" font-weight="600">${escape(label('chartTitle', chart))}</text>`;
       MONTHS.forEach((month, column) => {
-        svg += `<text x="${left + column * cellWidth + cellWidth / 2}" y="${base + 49}" text-anchor="middle" fill="#475569" font-size="12">${escape(label('monthTick', month))}</text>`;
+        svg += `<text x="${left + column * cellWidth + cellWidth / 2}" y="${base + 60}" text-anchor="middle" fill="#475569" font-size="15">${escape(label('monthTick', month))}</text>`;
       });
       fiscalYears.forEach((year, row) => {
-        svg += `<text x="${left - 12}" y="${base + 56 + row * cellHeight + cellHeight / 2}" text-anchor="end" dominant-baseline="middle" fill="#475569" font-size="12">${escape(label('fiscalYear', year))}</text>`;
+        svg += `<text x="${left - 12}" y="${base + 72 + row * cellHeight + cellHeight / 2}" text-anchor="end" dominant-baseline="middle" fill="#475569" font-size="15">${escape(label('fiscalYear', year))}</text>`;
       });
       for (const cell of cells.filter(cell => cell.chart === chart)) {
-        const x = left + cell.monthIndex * cellWidth, y = base + 56 + fiscalYears.indexOf(cell.fiscalYear) * cellHeight;
+        const x = left + cell.monthIndex * cellWidth, y = base + 72 + fiscalYears.indexOf(cell.fiscalYear) * cellHeight;
         const tooltip = escape(label('cellTooltip', cell));
-        svg += `<g class="fiscal-heatmap-cell" data-chart="${cell.chart}" data-bulletin="${cell.bulletin}" data-value="${cell.value === null ? '' : cell.value}" data-state="${cell.state}" data-selected="${cell.selected}" data-observed="${cell.observed}" role="img" aria-label="${tooltip}"><title>${tooltip}</title><rect x="${x + 2}" y="${y + 2}" width="${cellWidth - 4}" height="${cellHeight - 4}" rx="3" fill="${fill(cell)}" stroke="${cell.selected ? '#0f172a' : 'none'}" stroke-width="${cell.selected ? '2.5' : '0'}"/><text x="${x + cellWidth / 2}" y="${y + cellHeight / 2}" text-anchor="middle" dominant-baseline="middle" fill="${cell.state === 'outside' || cell.state === 'missing' ? '#64748b' : '#243344'}" font-size="12">${escape(label('cellLabel', cell))}</text></g>`;
+        svg += `<g class="fiscal-heatmap-cell" data-chart="${cell.chart}" data-bulletin="${cell.bulletin}" data-value="${cell.value === null ? '' : cell.value}" data-state="${cell.state}" data-selected="${cell.selected}" data-observed="${cell.observed}" role="img" aria-label="${tooltip}"><title>${tooltip}</title><rect x="${x + 2}" y="${y + 2}" width="${cellWidth - 4}" height="${cellHeight - 4}" rx="3" fill="${fill(cell)}" stroke="${cell.selected ? '#0f172a' : 'none'}" stroke-width="${cell.selected ? '2.5' : '0'}"/><text x="${x + cellWidth / 2}" y="${y + cellHeight / 2}" text-anchor="middle" dominant-baseline="middle" fill="${cell.state === 'outside' || cell.state === 'missing' ? '#64748b' : '#243344'}" font-size="15">${escape(label('cellLabel', cell))}</text></g>`;
       }
-      svg += `<text x="${left}" y="${base + 56 + fiscalYears.length * cellHeight + 18}" fill="#64748b" font-size="11">${escape(label('fiscalAxis'))}</text></g>`;
+      svg += `<text x="${left}" y="${base + 72 + fiscalYears.length * cellHeight + 24}" fill="#64748b" font-size="14">${escape(label('fiscalAxis'))}</text></g>`;
     }
     return svg + '</svg>';
   }

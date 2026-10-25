@@ -24,6 +24,13 @@
       adjustmentBefore: 'Moved from',
       adjustmentAfter: (months) => `to October under the closure assumption, adding ${months} ${months === 1 ? 'month' : 'months'}.`,
       chart: (chart) => `CHART ${chart}`, filing: 'Dates for filing', finalAction: 'Final action dates',
+      chartHelpLabel: (chart) => `About Chart ${chart}`,
+      chartAHelpTitle: 'When your green card may be approved.',
+      chartAHelp: 'When your priority date is earlier than the Chart A cutoff (or your category is Current), a visa number is available for your green card approval. USCIS must still review and approve your I-485.',
+      chartBHelpTitle: 'When you may file your I-485 green card application in the U.S.',
+      chartBHelp: 'USCIS must allow Chart B for filing that month. Your priority date must be earlier than its cutoff (or your category must be Current), and you must meet the other filing requirements. Eligible applicants may also request work permission (I-765) and travel permission (I-131); these requests need separate approval.',
+      closureTitle: 'Chart B closure assumption',
+      closureNote: 'Chart B is assumed closed from May through September. A projected date in these months moves to October of the same year, the start of the next fiscal year. This adjustment applies to future Chart B estimates only.',
       latestCutoff: 'Latest cutoff', average: (months) => `${months}-month average`, gap: 'Priority-date gap',
       tableCaption: (category, region) => `${category} ${region} cutoff dates in the selected averaging window`,
       tableCaptionGeneric: 'Bulletin cutoff dates used in the selected averaging window',
@@ -77,6 +84,13 @@
       adjustmentBefore: '按表 B 关闭假设，预计月份从',
       adjustmentAfter: (months) => `顺延至 10 月，增加 ${months} 个月等待时间。`,
       chart: (chart) => `表 ${chart}`, filing: '递交申请日期', finalAction: '最终裁定日期',
+      chartHelpLabel: (chart) => `了解表 ${chart}`,
+      chartAHelpTitle: '何时可以获批绿卡。',
+      chartAHelp: '当您的优先日期早于表 A 的截止日期（或所属类别为无排期）时，就有可用于批准绿卡的名额。USCIS 仍须完成审核并批准您的 I-485 申请。',
+      chartBHelpTitle: '何时可以在美国境内递交 I-485 绿卡申请。',
+      chartBHelp: 'USCIS 须允许当月使用表 B。您的优先日期须早于表 B 的截止日期（或所属类别为无排期），并满足其他递交条件。符合条件的申请人还可申请工作许可（I-765）和旅行许可（I-131）；这些申请需要另行获批。',
+      closureTitle: '表 B 关闭假设',
+      closureNote: '假设表 B 在每年 5 月至 9 月关闭。若预计到达月份在此期间，则顺延至同年 10 月（下一财年开始）。此调整仅适用于表 B 的未来估算。',
       latestCutoff: '最新截止日期', average: (months) => `${months} 个月平均速度`, gap: '与优先日期的差距',
       tableCaption: (category, region) => `${category} · ${region} 在所选平均速度计算期间内的截止日期`,
       tableCaptionGeneric: '所选平均速度计算期间使用的排期截止日期',
@@ -190,12 +204,70 @@
       ? `<p class="result-reason">${escape(result.reason ? translateModelMessage(result.reason) : text('reasonFallback'))}</p>` : '';
     const adjustment = isB && result.status === 'projected' && result.closureAdjusted
       ? `<p class="closure-detail">${escape(text('adjustmentBefore'))} <strong>${escape(formatMonth(result.unadjustedEstimatedBulletin))}</strong> ${escape(text('adjustmentAfter', result.closureAdjustmentMonths))}</p>` : '';
+    const closureHelp = isB ? `<span class="chart-help">
+        <button type="button" class="chart-help-trigger closure-help-trigger" aria-label="${escape(text('closureTitle'))}" aria-describedby="chart-b-closure-help" aria-controls="chart-b-closure-help" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M6 2v4M14 2v4M3 8h14"/></svg></button>
+        <span id="chart-b-closure-help" class="chart-help-tooltip" role="tooltip" hidden><strong class="help-title">${escape(text('closureTitle'))}</strong>${escape(text('closureNote'))}</span>
+      </span>` : '';
     return `<article class="result-card ${chart}" data-chart="${chart}" data-status="${escape(result.status)}" aria-labelledby="chart-${chart}-title">
-      <div class="chart-label" id="chart-${chart}-title"><i aria-hidden="true"></i>${escape(text('chart', chart.toUpperCase()))}</div>
+      <div class="chart-label"><i aria-hidden="true"></i><span id="chart-${chart}-title">${escape(text('chart', chart.toUpperCase()))}</span><span class="chart-help">
+        <button type="button" class="chart-help-trigger" aria-label="${escape(text('chartHelpLabel', chart.toUpperCase()))}" aria-describedby="chart-${chart}-help" aria-controls="chart-${chart}-help" aria-expanded="false">?</button>
+        <span id="chart-${chart}-help" class="chart-help-tooltip" role="tooltip" hidden><strong class="help-title">${escape(text(isB ? 'chartBHelpTitle' : 'chartAHelpTitle'))}</strong>${escape(text(isB ? 'chartBHelp' : 'chartAHelp'))}</span>
+      </span>${closureHelp}</div>
       <p class="chart-name">${escape(text(isB ? 'filing' : 'finalAction'))}</p>
       <p class="result-kicker">${kicker}</p><p class="result-value${result.status === 'projected' ? '' : ' state'}">${escape(title)}</p>
       <p class="result-wait">${escape(wait)}</p>
       <dl class="result-stats"><div><dt>${escape(text('latestCutoff'))}</dt><dd>${escape(formatDate(result.latestCutoff))}</dd></div><div><dt>${escape(text('average', state.windowMonths))}</dt><dd>${escape(formatSpeed(result.speedDaysPerMonth))}</dd></div><div><dt>${escape(text('gap'))}</dt><dd>${escape(result.gapDays == null ? text('nonnumeric') : text('days', result.gapDays.toLocaleString(localeTag())))}</dd></div></dl>${reason}${adjustment}</article>`;
+  }
+
+  let activeChartHelp = null;
+  let pinnedChartHelp = false;
+  const chartHelpFor = (target) => target?.closest?.('.chart-help') || null;
+  function closeChartHelp() {
+    if (!activeChartHelp) return;
+    activeChartHelp.querySelector('.chart-help-tooltip').hidden = true;
+    activeChartHelp.querySelector('.chart-help-trigger').setAttribute('aria-expanded', 'false');
+    activeChartHelp = null;
+    pinnedChartHelp = false;
+  }
+  function showChartHelp(help, pin = false) {
+    if (activeChartHelp !== help) closeChartHelp();
+    activeChartHelp = help;
+    pinnedChartHelp = pinnedChartHelp || pin;
+    help.querySelector('.chart-help-tooltip').hidden = false;
+    help.querySelector('.chart-help-trigger').setAttribute('aria-expanded', 'true');
+  }
+  function bindChartHelp() {
+    for (const container of [$('calculator-form'), $('result-cards')]) {
+      container.addEventListener('mouseover', (event) => {
+        const help = chartHelpFor(event.target);
+        if (help && !help.contains(event.relatedTarget)) showChartHelp(help);
+      });
+      container.addEventListener('mouseout', (event) => {
+        const help = chartHelpFor(event.target);
+        if (help && help === activeChartHelp && !help.contains(event.relatedTarget) && !help.contains(document.activeElement) && !pinnedChartHelp) closeChartHelp();
+      });
+      container.addEventListener('focusin', (event) => {
+        const help = chartHelpFor(event.target);
+        if (help) showChartHelp(help);
+      });
+      container.addEventListener('focusout', (event) => {
+        const help = chartHelpFor(event.target);
+        if (help && help === activeChartHelp && !help.contains(event.relatedTarget)) closeChartHelp();
+      });
+      container.addEventListener('click', (event) => {
+        const button = event.target?.closest?.('.chart-help-trigger');
+        if (!button) return;
+        const help = chartHelpFor(button);
+        if (activeChartHelp === help && pinnedChartHelp) closeChartHelp();
+        else showChartHelp(help, true);
+      });
+    }
+    document.addEventListener('click', (event) => {
+      if (activeChartHelp && !activeChartHelp.contains(event.target)) closeChartHelp();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && activeChartHelp) { closeChartHelp(); event.preventDefault(); }
+    });
   }
 
   function renderHistory(history) {
@@ -293,6 +365,7 @@
   }
 
   function clearResults(message) {
+    closeChartHelp();
     state = undefined;
     $('form-error').textContent = message;
     $('form-error').hidden = false;
@@ -314,6 +387,7 @@
   }
 
   function calculate() {
+    closeChartHelp();
     updateWindowPresets();
     // Keep the data badge localized even while another input is invalid.
     $('latest-bulletin').textContent = formatMonth(lastBulletin);
@@ -383,5 +457,6 @@
     populateBulletinOptions();
     calculate();
   });
+  bindChartHelp();
   applyWindowPreset(24);
 }());

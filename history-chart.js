@@ -138,28 +138,28 @@
     const dateValues = points.flatMap(point => [point.cutoffA, point.cutoffB]).filter(value => value !== null);
     const distances = points.flatMap(point => [point.gap, point.lagA, point.lagB]).filter(value => value !== null);
     const dates = dateScale(dateValues), days = distanceScale(distances);
-    const width = 900, height = 410;
-    const left = 103, right = 737, top = 42, bottom = 337;
+    const width = 900, height = 450;
+    const left = 130, right = 720, top = 48, bottom = 365;
     const x = index => points.length < 2 ? (left + right) / 2 : left + index * (right - left) / (points.length - 1);
     const yDate = value => bottom - (value - dates.min) / (dates.max - dates.min) * (bottom - top);
     const yDays = value => bottom - (value - days.min) / (days.max - days.min) * (bottom - top);
     const coordinate = value => Number(value.toFixed(2));
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" class="history-five-line-chart" role="img" aria-labelledby="history-plot-title history-plot-description" style="display:block;width:100%;height:auto;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff"><title id="history-plot-title">${escape(label('title'))}</title><desc id="history-plot-description">${escape(label('description'))}</desc>`;
-    svg += '<rect x="0" y="0" width="900" height="410" fill="#fff"/>';
+    svg += `<rect x="0" y="0" width="${width}" height="${height}" fill="#fff"/>`;
     if (dates) {
       for (const tick of dates.ticks) {
         const y = coordinate(yDate(tick));
-        svg += `<line x1="${left}" x2="${right}" y1="${y}" y2="${y}" stroke="#e2e8f0" stroke-width="1"/><text x="${left - 12}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#475569" font-size="11">${escape(label('dateTick', fromDay(tick)))}</text>`;
+        svg += `<line x1="${left}" x2="${right}" y1="${y}" y2="${y}" stroke="#e2e8f0" stroke-width="1"/><text x="${left - 12}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#475569" font-size="15">${escape(label('dateTick', fromDay(tick)))}</text>`;
       }
     }
     svg += `<path d="M${left} ${top}V${bottom}H${right}V${top}" fill="none" stroke="#94a3b8" stroke-width="1"/>`;
     for (const tick of days.ticks) {
       const y = coordinate(yDays(tick));
-      svg += `<line x1="${right}" x2="${right + 5}" y1="${y}" y2="${y}" stroke="#94a3b8"/><text x="${right + 10}" y="${y}" dominant-baseline="middle" fill="#475569" font-size="11">${escape(label('dayTick', tick, tick / DAYS_PER_MONTH))}</text>`;
+      svg += `<line x1="${right}" x2="${right + 5}" y1="${y}" y2="${y}" stroke="#94a3b8"/><text x="${right + 10}" y="${y}" dominant-baseline="middle" fill="#475569" font-size="15">${escape(label('dayTick', tick, tick / DAYS_PER_MONTH))}</text>`;
     }
-    svg += `<text x="${right + 9}" y="22" fill="#475569" font-size="11">${escape(label('tickHeading'))}</text>`;
-    svg += `<text x="20" y="${(top + bottom) / 2}" text-anchor="middle" transform="rotate(-90 20 ${(top + bottom) / 2})" fill="#334155" font-size="12" font-weight="600">${escape(label('dateAxis'))}</text>`;
-    svg += `<text x="883" y="${(top + bottom) / 2}" text-anchor="middle" transform="rotate(90 883 ${(top + bottom) / 2})" fill="#334155" font-size="12" font-weight="600">${escape(label('dayAxis'))}</text>`;
+    svg += `<text x="${right + 9}" y="26" fill="#475569" font-size="15">${escape(label('tickHeading'))}</text>`;
+    svg += `<text x="20" y="${(top + bottom) / 2}" text-anchor="middle" transform="rotate(-90 20 ${(top + bottom) / 2})" fill="#334155" font-size="15" font-weight="600">${escape(label('dateAxis'))}</text>`;
+    svg += `<text x="883" y="${(top + bottom) / 2}" text-anchor="middle" transform="rotate(90 883 ${(top + bottom) / 2})" fill="#334155" font-size="15" font-weight="600">${escape(label('dayAxis'))}</text>`;
     if (points.length) {
       const stride = Math.max(1, Math.ceil((points.length - 1) / 5));
       const indices = [];
@@ -170,10 +170,10 @@
       }
       for (const index of indices) {
         const px = coordinate(x(index));
-        svg += `<line x1="${px}" x2="${px}" y1="${bottom}" y2="${bottom + 5}" stroke="#94a3b8"/><text x="${px}" y="${bottom + 23}" text-anchor="middle" fill="#475569" font-size="11">${escape(label('monthTick', points[index].bulletin))}</text>`;
+        svg += `<line x1="${px}" x2="${px}" y1="${bottom}" y2="${bottom + 5}" stroke="#94a3b8"/><text x="${px}" y="${bottom + 27}" text-anchor="middle" fill="#475569" font-size="15">${escape(label('monthTick', points[index].bulletin))}</text>`;
       }
     }
-    svg += `<text x="${(left + right) / 2}" y="393" text-anchor="middle" fill="#334155" font-size="12" font-weight="600">${escape(label('bulletinAxis'))}</text>`;
+    svg += `<text x="${(left + right) / 2}" y="430" text-anchor="middle" fill="#334155" font-size="15" font-weight="600">${escape(label('bulletinAxis'))}</text>`;
     for (const series of SERIES) {
       let path = '', previous = null, hovers = '';
       const yValue = series.axis === 'date' ? yDate : yDays;
@@ -191,10 +191,10 @@
       svg += `<path class="history-series" data-series="${series.key}" d="${path}" fill="none" stroke="${series.color}" stroke-width="${series.axis === 'date' ? 2.2 : 2}"${series.dash ? ` stroke-dasharray="${series.dash}" stroke-linecap="round"` : ''} stroke-linejoin="round"><title>${escape(label(series.key))}</title></path>${hovers}`;
     }
     if (!dateValues.length) {
-      svg += `<text class="history-no-date" x="${left + 12}" y="${top + 19}" fill="#64748b" font-size="11">${escape(label('noDateLabel'))}</text>`;
+      svg += `<text class="history-no-date" x="${left + 12}" y="${top + 23}" fill="#64748b" font-size="14">${escape(label('noDateLabel'))}</text>`;
     }
     if (!dateValues.length && !distances.length) {
-      svg += `<text class="history-no-data" x="${(left + right) / 2}" y="${(top + bottom) / 2}" text-anchor="middle" fill="#475569" font-size="12">${escape(label('noDataLabel'))}</text>`;
+      svg += `<text class="history-no-data" x="${(left + right) / 2}" y="${(top + bottom) / 2}" text-anchor="middle" fill="#475569" font-size="15">${escape(label('noDataLabel'))}</text>`;
     }
     return svg + '</svg>';
   }

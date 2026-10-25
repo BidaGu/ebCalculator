@@ -148,7 +148,7 @@
     const label = (key, ...args) => typeof labels[key] === 'function' ? labels[key](...args) : labels[key];
     const numeric = prepared.values.filter(value => value.speedDaysPerMonth !== null).map(value => value.speedDaysPerMonth);
     const scale = speedScale(numeric);
-    const width = 900, height = 700, left = 86, right = 866, plotHeight = 200;
+    const width = 900, height = 840, left = 96, right = 856, plotHeight = 220;
     const plotFirst = prepared.plotStart === null ? 0 : monthIndex(prepared.plotStart);
     const plotLast = prepared.plotEnd === null ? 0 : monthIndex(prepared.plotEnd);
     const x = month => plotLast === plotFirst ? (left + right) / 2 : left + (month - plotFirst) / (plotLast - plotFirst) * (right - left);
@@ -157,7 +157,7 @@
     const text = (xx, yy, value, attrs = '') => `<text x="${coordinate(xx)}" y="${coordinate(yy)}" ${attrs}>${escape(value)}</text>`;
     const line = (x1, y1, x2, y2, color, strokeWidth = 1, dash = '', attrs = '') => `<line x1="${coordinate(x1)}" y1="${coordinate(y1)}" x2="${coordinate(x2)}" y2="${coordinate(y2)}" stroke="${color}" stroke-width="${strokeWidth}"${dash ? ` stroke-dasharray="${dash}"` : ''} ${attrs}/>`;
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" class="rolling-speed-plot" role="img" aria-labelledby="rolling-speed-title rolling-speed-description" style="display:block;width:100%;height:auto;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff"><title id="rolling-speed-title">${escape(label('title'))}</title><desc id="rolling-speed-description">${escape(label('description'))}</desc><rect width="${width}" height="${height}" fill="#fff"/>`;
-    if (!prepared.points.length) return svg + text((left + right) / 2, 220, label('noHistory'), 'text-anchor="middle" fill="#64748b" font-size="13"') + '</svg>';
+    if (!prepared.points.length) return svg + text((left + right) / 2, 220, label('noHistory'), 'text-anchor="middle" fill="#64748b" font-size="14"') + '</svg>';
 
     const ticks = [];
     const stride = Math.max(1, Math.ceil((plotLast - plotFirst) / 5));
@@ -167,15 +167,15 @@
       ticks.push(plotLast);
     }
     ['A', 'B'].forEach((chart, panelIndex) => {
-      const top = 51 + panelIndex * 336, bottom = top + plotHeight;
+      const top = 62 + panelIndex * 390, bottom = top + plotHeight;
       const subset = prepared.values.filter(value => value.chart === chart && monthIndex(value.bulletin) >= plotFirst);
       const unavailable = WINDOWS.filter(months => !subset.some(value => value.windowMonths === months && value.speedDaysPerMonth !== null));
       const hasNumeric = subset.some(value => value.speedDaysPerMonth !== null);
       let selectionBoundaries = '';
       svg += `<g data-rolling-panel="${chart}">`;
-      svg += text(left, top - 32, label('chartTitle', chart), 'fill="#183f35" font-size="15" font-weight="700"');
-      svg += text(right, top - 32, label('speedAxis'), 'text-anchor="end" fill="#64748b" font-size="10"');
-      if (unavailable.length && hasNumeric) svg += text(left, top - 12, label('unavailableWindows', unavailable), 'class="rolling-unavailable-windows" fill="#64748b" font-size="10"');
+      svg += text(left, top - 38, label('chartTitle', chart), 'fill="#183f35" font-size="18" font-weight="700"');
+      svg += text(right, top - 38, label('speedAxis'), 'text-anchor="end" fill="#64748b" font-size="14"');
+      if (unavailable.length && hasNumeric) svg += text(left, top - 17, label('unavailableWindows', unavailable), 'class="rolling-unavailable-windows" fill="#64748b" font-size="14"');
       svg += `<rect data-negative-band="${chart}" x="${left}" y="${coordinate(y(0, top))}" width="${right - left}" height="${coordinate(bottom - y(0, top))}" fill="#fff5f4"/>`;
       if (prepared.selectedStart !== null) {
         const selectedX = x(monthIndex(prepared.selectedStart)), selectedRight = x(monthIndex(prepared.selectedEnd));
@@ -191,12 +191,13 @@
       for (const speed of scale.ticks) {
         const yy = y(speed, top);
         svg += line(left, yy, right, yy, speed === 0 ? '#849189' : '#e6ece8', speed === 0 ? 1.5 : 1);
-        svg += text(left - 12, yy + 4, label('speedTick', speed), 'text-anchor="end" fill="#64748b" font-size="11"');
+        svg += text(left - 12, yy + 4, label('speedTick', speed), 'text-anchor="end" fill="#64748b" font-size="15"');
       }
       for (const month of ticks) {
         const xx = x(month);
         svg += line(xx, top, xx, bottom, '#edf0ed');
-        svg += text(xx, bottom + 23, label('monthTick', fromMonth(month)), 'text-anchor="middle" fill="#64748b" font-size="11"');
+        const anchor = month === plotFirst ? 'start' : month === plotLast ? 'end' : 'middle';
+        svg += text(xx, bottom + 27, label('monthTick', fromMonth(month)), `text-anchor="${anchor}" fill="#64748b" font-size="15"`);
       }
       svg += line(left, y(CALENDAR_PACE, top), right, y(CALENDAR_PACE, top), '#829488', 1.2, '3 4', `data-calendar-reference="${chart}" data-speed="${CALENDAR_PACE}"`);
       svg += selectionBoundaries;
@@ -214,16 +215,16 @@
         }
         svg += `<path class="rolling-speed-series" data-chart="${chart}" data-window="${series.months}" d="${path}" fill="none" stroke="${series.color}" stroke-width="${series.width}"${series.dash ? ` stroke-dasharray="${series.dash}"` : ''} stroke-linecap="round" stroke-linejoin="round"><title>${escape(label('windowLabel', series.months))}</title></path>${hovers}`;
       });
-      if (!hasNumeric) svg += text((left + right) / 2, top + plotHeight / 2, label('noData'), 'class="rolling-no-data" text-anchor="middle" fill="#64748b" font-size="12"');
-      svg += `<rect x="${left}" y="${bottom + 34}" width="${right - left}" height="34" rx="5" fill="#f4f7f5"/>`;
-      svg += text(left + 9, bottom + 55, label('latestLabel', prepared.lastBulletin), 'fill="#475569" font-size="10" font-weight="600"');
+      if (!hasNumeric) svg += text((left + right) / 2, top + plotHeight / 2, label('noData'), 'class="rolling-no-data" text-anchor="middle" fill="#64748b" font-size="14"');
+      svg += `<rect x="${left}" y="${bottom + 40}" width="${right - left}" height="64" rx="5" fill="#f4f7f5"/>`;
+      svg += text(left + 12, bottom + 62, label('latestLabel', prepared.lastBulletin), 'fill="#475569" font-size="14" font-weight="600"');
       SERIES.forEach((series, index) => {
         const latest = subset.find(value => value.windowMonths === series.months && value.bulletin === prepared.lastBulletin);
-        svg += text(289 + index * 145, bottom + 55, label('latestValue', series.months, latest?.speedDaysPerMonth ?? null), `fill="${series.color}" font-size="11" font-weight="600"`);
+        svg += text(left + 14 + index * ((right - left) / 4), bottom + 87, label('latestValue', series.months, latest?.speedDaysPerMonth ?? null), `fill="${series.color}" font-size="14" font-weight="600"`);
       });
       svg += '</g>';
     });
-    svg += text((left + right) / 2, 682, label('bulletinAxis'), 'text-anchor="middle" fill="#334155" font-size="12" font-weight="600"');
+    svg += text((left + right) / 2, 817, label('bulletinAxis'), 'text-anchor="middle" fill="#334155" font-size="15" font-weight="600"');
     return svg + '</svg>';
   }
 
