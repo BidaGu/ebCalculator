@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#143f3a">
+  <meta name="description" content="Estimate when EB1, EB2, and EB3 Chart A and Chart B reach your priority date using a custom window of saved Visa Bulletin history.">
+  <title>Employment-Based Priority Date Calculator</title>
+  <!-- Change an asset's version when its contents change so hosted pages load the matching files. -->
+  <link rel="stylesheet" href="styles.css?v=2a34bf5940f3">
+  <script defer src="i18n.js?v=bdcb68948619"></script>
+  <script defer src="data/bulletins.js"></script>
+  <script defer src="model.js?v=1dbdad16fe65"></script>
+  <script defer src="history-chart.js?v=c89fdfeda530"></script>
+  <script defer src="fiscal-heatmap.js?v=4f91746943a5"></script>
+  <script defer src="rolling-speed-chart.js?v=0f0aec64c3bb"></script>
+  <script defer src="app.js?v=b4860b6b2e3c"></script>
+</head>
+<body>
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div><h1 id="page-title" data-i18n="pageTitle">When could your date be reached?</h1></div>
+      <div class="intro-tools">
+        <div class="data-badge"><span class="live-dot" aria-hidden="true"></span><div><span data-i18n="latestBulletin">Latest saved bulletin</span><strong id="latest-bulletin">Loading data…</strong></div></div>
+        <div class="language-control"><label for="language-select">Language / 语言</label><select id="language-select" name="language"><option value="en" lang="en">English</option><option value="zh-CN" lang="zh-CN">简体中文</option></select></div>
+        <a class="project-github" href="https://github.com/BidaGu/ebCalculator" target="_blank" rel="noopener noreferrer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.86c.68 0 1.36.09 2 .26 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          <span data-i18n="viewOnGithub">View on GitHub</span>
+        </a>
+      </div>
+    </section>
+
+    <div class="workspace">
+      <aside class="input-panel panel">
+        <div class="section-number">01 <span data-i18n="yourDetails">YOUR DETAILS</span></div>
+        <h2 data-i18n="setTarget">Set your target</h2>
+        <form id="calculator-form">
+          <label for="category" data-i18n="category">Employment category</label>
+          <select id="category" name="category"><option value="EB1">EB1</option><option value="EB2">EB2</option><option value="EB3">EB3</option></select>
+          <label for="region" data-i18n="region">Chargeability region</label>
+          <select id="region" name="region"><option value="CHINA" data-i18n="china">China — mainland</option><option value="INDIA" data-i18n="india">India</option><option value="ROW" data-i18n="restOfWorld">Rest of world</option></select>
+          <label for="priority-date" data-i18n="priorityDate">Priority date</label>
+          <input id="priority-date" name="priority-date" type="date" value="2025-01-01" min="0001-01-01" max="9999-12-31" required aria-describedby="priority-hint form-error">
+          <p class="field-hint" id="priority-hint" data-i18n="priorityHint">A sample date is filled in. Replace it with yours.</p>
+          <fieldset class="window-controls" aria-describedby="window-help window-hint">
+            <legend data-i18n="averagingWindow">Averaging window</legend>
+            <p class="window-help" id="window-help" data-i18n="windowHelp">Choose the historical period used to calculate each chart’s average progression speed. That speed is then used to estimate when the cutoff date could reach your priority date.</p>
+            <div class="window-selectors">
+              <div><label for="window-start" data-i18n="startBulletin">Start bulletin</label><select id="window-start" name="window-start" required></select></div>
+              <div><label for="window-end" data-i18n="endBulletin">End bulletin</label><select id="window-end" name="window-end" required></select></div>
+            </div>
+            <p id="window-label" class="window-summary" aria-live="polite">Latest twenty-four monthly intervals</p>
+            <p class="field-hint" id="window-hint" data-i18n="windowHint">Both endpoints count. Choose at least one monthly interval.</p>
+            <div class="window-presets" role="group" aria-label="Recent history shortcuts" data-i18n-aria-label="historyShortcuts">
+              <button type="button" class="reset-window" id="latest-24-months" aria-pressed="true" data-i18n="latestTwentyFour">Use latest 24 months</button>
+              <button type="button" class="reset-window" id="latest-12-months" aria-pressed="false" data-i18n="latestTwelve">Use latest 12 months</button>
+            </div>
+          </fieldset>
+          <p class="form-error" id="form-error" role="alert" hidden></p>
+        </form>
+        <div class="input-footnote"><span class="footnote-rule"></span><p data-i18n="sharedWindow">Both charts use the same history window.</p></div>
+      </aside>
+
+      <section class="results" aria-label="Estimate results" data-i18n-aria-label="estimateResults">
+        <div class="results-top"><div class="section-number">02 <span data-i18n="yourEstimates">YOUR ESTIMATES</span></div><p id="target-summary">EB1 · China mainland</p></div>
+        <div id="result-cards" class="result-cards" aria-live="polite" aria-atomic="true"></div>
+        <p class="estimate-note" id="estimate-note">Waits are measured from the latest saved bulletin, not from today.</p>
+        <p class="closure-note"><strong data-i18n="closureTitle">Chart B closure assumption</strong><span data-i18n="closureNote">Chart B is assumed closed from May through September. A projected date in these months moves to October of the same year, the start of the next fiscal year. This adjustment applies to future Chart B estimates only.</span></p>
+
+        <section class="history-panel panel" aria-labelledby="history-heading">
+          <div class="history-heading"><div><p class="eyebrow" data-i18n="historyEyebrow">THE HISTORY BEHIND THE ESTIMATE</p><h2 id="history-heading">Selected progression history</h2></div></div>
+          <div class="history-tabs" id="history-tabs" role="tablist" aria-label="History plot views" data-i18n-aria-label="historyTabs">
+            <button type="button" id="history-tab-lines" role="tab" aria-selected="true" aria-controls="history-panel-lines" tabindex="0" data-i18n="linesTab">Cutoffs &amp; gaps</button>
+            <button type="button" id="history-tab-heatmap" role="tab" aria-selected="false" aria-controls="history-panel-heatmap" tabindex="-1" data-i18n="heatmapTab">Monthly heatmap</button>
+            <button type="button" id="history-tab-speed" role="tab" aria-selected="false" aria-controls="history-panel-speed" tabindex="-1" data-i18n="speedTab">Rolling speed</button>
+          </div>
+          <div id="history-panel-lines" class="history-plot-panel" role="tabpanel" aria-labelledby="history-tab-lines">
+            <div class="history-legend" aria-label="History chart series" data-i18n-aria-label="historyLegend">
+              <span><i class="history-key cutoff-a" aria-hidden="true"></i><span data-i18n="chartACutoff">Chart A cutoff</span></span>
+              <span><i class="history-key cutoff-b" aria-hidden="true"></i><span data-i18n="chartBCutoff">Chart B cutoff</span></span>
+              <span><i class="history-key cutoff-gap" aria-hidden="true"></i><span data-i18n="filingFinalGap">Filing–final-action cutoff gap</span></span>
+              <span><i class="history-key lag-a" aria-hidden="true"></i><span data-i18n="finalActionLag">Final-action cutoff lag</span></span>
+              <span><i class="history-key lag-b" aria-hidden="true"></i><span data-i18n="filingLag">Filing cutoff lag</span></span>
+            </div>
+            <div id="history-chart" class="history-chart" tabindex="0" role="region" aria-label="Cutoff dates and day distances" data-i18n-aria-label="historyChartRegion"></div>
+            <p class="history-scroll-hint" data-i18n="historyScrollHint">Scroll sideways to see the full chart on a narrow screen.</p>
+            <div class="chart-caption"><span id="chart-caption">The selected window determines the average speed</span><span data-i18n="verticalAxis">Left: cutoff dates · Right: days (approx. months)</span></div>
+            <div class="history-explanations">
+              <p><strong class="metric-gap" data-i18n="filingFinalGap">Filing–final-action cutoff gap</strong><span data-i18n="gapExplanation">B − A: distance between the two cutoff dates.</span></p>
+              <p><strong class="metric-a" data-i18n="finalActionLag">Final-action cutoff lag</strong><span data-i18n="finalLagExplanation">Bulletin month's 15th − A: how far the final-action cutoff trails that reference date.</span></p>
+              <p><strong class="metric-b" data-i18n="filingLag">Filing cutoff lag</strong><span data-i18n="filingLagExplanation">Bulletin month's 15th − B: how far the filing cutoff trails that reference date.</span></p>
+            </div>
+            <p class="history-plot-note" data-i18n="historyDistanceNote">These date gaps are not expected waits or I-485 processing times. Chart B filing use depends on USCIS's monthly chart selection.</p>
+            <p class="history-plot-note" data-i18n="historyCurrentNote">Current is shown as 0 on distance lines, with solid cutoff lines omitted. Unavailable and missing observations remain gaps. Months are approximate (365.25 ÷ 12 days per month).</p>
+            <details class="history-details"><summary><span class="details-label" data-i18n="viewDates">View the underlying dates</span><span aria-hidden="true">+</span></summary><div class="table-wrap"><table><caption class="sr-only" id="history-table-caption">Bulletin cutoff dates used in the selected averaging window</caption><thead><tr><th scope="col" data-i18n="bulletinMonth">Bulletin month</th><th scope="col" data-i18n="chartB">Chart B</th><th scope="col" data-i18n="chartA">Chart A</th></tr></thead><tbody id="history-table"></tbody></table></div></details>
+          </div>
+          <div id="history-panel-heatmap" class="history-plot-panel" role="tabpanel" aria-labelledby="history-tab-heatmap" hidden>
+            <p class="heatmap-intro" data-i18n="heatmapIntro">Monthly cutoff movement in days, across all saved history. Compare the same month down each column.</p>
+            <div class="heatmap-legend" aria-label="Heatmap key" data-i18n-aria-label="heatmapLegend">
+              <span><i class="heatmap-key forward" aria-hidden="true"></i><span data-i18n="heatmapForward">+ Forward</span></span>
+              <span><i class="heatmap-key unchanged" aria-hidden="true"></i><span data-i18n="heatmapUnchanged">0 Unchanged</span></span>
+              <span><i class="heatmap-key backward" aria-hidden="true"></i><span data-i18n="heatmapBackward">− Retrogression</span></span>
+              <span><i class="heatmap-key selected" aria-hidden="true"></i><span data-i18n="heatmapSelected">Selected window</span></span>
+            </div>
+            <div id="fiscal-heatmap" class="fiscal-heatmap" tabindex="0" role="region" aria-label="Monthly progression by fiscal year" data-i18n-aria-label="heatmapRegion"></div>
+            <p class="history-scroll-hint" data-i18n="historyScrollHint">Scroll sideways to see the full chart on a narrow screen.</p>
+            <div class="chart-caption heatmap-caption"><span id="heatmap-range"></span><span id="heatmap-selection"></span></div>
+            <p class="history-plot-note" data-i18n="heatmapWindowNote">Outlined cells mark both endpoints and every saved bulletin in the selected window. Each cell compares its cutoff with the previous calendar month's cutoff, including a previous month outside the window.</p>
+            <p class="history-plot-note" data-i18n="heatmapStatusNote">C = Current; U = Unavailable; C→D / U→D = return to a dated cutoff. — means no comparable prior month or outside saved history. These states are not counted as zero movement.</p>
+            <p class="history-plot-note" data-i18n="heatmapScaleNote">Fiscal years run October–September. Color intensity caps at ±450 days; the numbers show the full change.</p>
+          </div>
+          <div id="history-panel-speed" class="history-plot-panel" role="tabpanel" aria-labelledby="history-tab-speed" hidden>
+            <p class="speed-intro" data-i18n="speedIntro">Compare trailing 12-, 24-, 36-, and 48-month average progression. Each point uses a window ending at that bulletin month.</p>
+            <div class="speed-legend" aria-label="Rolling speed key" data-i18n-aria-label="speedLegend">
+              <span><i class="speed-key speed-12" aria-hidden="true"></i><span data-i18n="speedTwelve">12 months</span></span>
+              <span><i class="speed-key speed-24" aria-hidden="true"></i><span data-i18n="speedTwentyFour">24 months</span></span>
+              <span><i class="speed-key speed-36" aria-hidden="true"></i><span data-i18n="speedThirtySix">36 months</span></span>
+              <span><i class="speed-key speed-48" aria-hidden="true"></i><span data-i18n="speedFortyEight">48 months</span></span>
+              <span><i class="speed-key speed-calendar" aria-hidden="true"></i><span data-i18n="speedCalendar">30.4 days/month ≈ calendar pace</span></span>
+              <span><i class="speed-window-key" aria-hidden="true"></i><span data-i18n="speedSelected">Selected period</span></span>
+            </div>
+            <div id="rolling-speed-chart" class="rolling-speed-chart" tabindex="0" role="region" aria-label="Trailing average cutoff progression speed" data-i18n-aria-label="speedRegion"></div>
+            <p class="history-scroll-hint" data-i18n="historyScrollHint">Scroll sideways to see the full chart on a narrow screen.</p>
+            <div class="chart-caption speed-caption"><span id="speed-source-range"></span><span id="speed-selection"></span></div>
+            <p class="history-plot-note" data-i18n="speedWindowNote">Shading marks the selected period where it overlaps the plotted dates. The four lines always use their fixed trailing windows and all saved history, independently of the averaging window used for the estimate.</p>
+            <p class="history-plot-note" data-i18n="speedMethodNote">Speed at month t = [cutoff(t) − cutoff(t − N months)] ÷ N, in cutoff days per bulletin month. Each N-month rate needs N + 1 consecutive dated observations. Current, Unavailable, and missing values leave gaps; negative rates mean net retrogression.</p>
+            <p class="history-plot-note" data-i18n="speedReferenceNote">Rates describe historical cutoff movement, not applicant waiting times or guaranteed future speeds. The 30.4 reference is approximate calendar pace (365.25 ÷ 12).</p>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <section class="method-panel" aria-labelledby="method-heading">
+      <div><p class="eyebrow" data-i18n="methodEyebrow">A SIMPLE, VISIBLE ASSUMPTION</p><h2 id="method-heading" data-i18n="methodHeading">Your selected pace continues.</h2><p data-i18n="methodDescription">The selected history sets the speed. The latest saved cutoff is always the starting point for your estimate.</p></div>
+      <div class="method-equation"><div><span data-i18n="averageSpeed">Average speed</span><strong data-i18n="speedFormula">(Window end cutoff − window start cutoff) ÷ months</strong><small data-i18n="speedDescription">Signed calendar-day movement across the selected window</small></div><div><span data-i18n="estimatedWait">Estimated wait</span><strong data-i18n="waitFormula">(Your date − latest cutoff) ÷ average speed</strong><small data-i18n="waitDescription">Projected from the latest saved bulletin, rounded up</small></div></div>
+    </section>
+    <footer class="site-footer">
+      <div class="project-feedback">
+        <p><span data-i18n="feedbackPrompt">Found an issue or have a suggestion?</span> <a href="https://github.com/BidaGu/ebCalculator/issues" target="_blank" rel="noopener noreferrer" data-i18n="reportOnGithub">Report it on GitHub.</a></p>
+        <p><span data-i18n="starPrompt">If you find this tool useful, consider</span> <a href="https://github.com/BidaGu/ebCalculator" target="_blank" rel="noopener noreferrer" data-i18n="starOnGithub">giving it a star ⭐.</a></p>
+      </div>
+      <div class="footer-meta">
+        <p data-i18n="disclaimer">A historical extrapolation, not a prediction or a filing / approval determination.</p>
+        <p>EB1 · EB2 · EB3 <span>·</span> <span class="footer-copy" data-i18n="runsLocally">Runs locally</span> <span>·</span> <span class="footer-copy" data-i18n="noDataSent">No data sent</span></p>
+      </div>
+    </footer>
+  </main>
+  <noscript><p class="noscript">Enable JavaScript to use the calculator. No internet connection is required.</p></noscript>
+</body>
+</html>
